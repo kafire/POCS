@@ -12,7 +12,7 @@ from string import letters
 Attack = False
 
 
-ceye_domain = '7w13ox.ceye.io'
+ceye_domain = 'x.ceye.io'
 ceye_api = '2ac0ac1cdda59cb5ea6e034d5f15f178'
 
 
