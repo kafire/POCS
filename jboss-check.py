@@ -50,7 +50,7 @@ user_agents = ["Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:38.0) Gecko/201
 
 
 
-ceye_domain = '7w13ox.ceye.io'
+ceye_domain = 'x.ceye.io'
 ceye_api = '2ac0ac1cdda59cb5ea6e034d5f15f178'
 
 
